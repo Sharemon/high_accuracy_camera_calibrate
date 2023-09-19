@@ -1,0 +1,4 @@
+#./high_accuracy_corner_detector --mode sim --pattern_width 9 --pattern_height 8 --pattern_distance 20 --pattern_radius_inside 5 --pattern_radius_outside 10 --pattern_margin_size 40 --pixel_size 0.2331 --image_folder ../data/sim
+./high_accuracy_corner_detector --mode generate --pattern_width 9 --pattern_height 8 --pattern_distance 20 --pattern_radius_inside 5 --pattern_radius_outside 10 --pattern_margin_size 40 --pixel_size 0.2331 --image_folder ../data/generate_pattern
+#./high_accuracy_corner_detector --mode single --pattern_width 9 --pattern_height 8 --pattern_distance 20 --pattern_radius_inside 5 --pattern_radius_outside 10 --pattern_margin_size 40 --pixel_size 0.2331 --image_folder ../data/single_camera_calibrate
+#./high_accuracy_corner_detector --mode stereo --pattern_width 9 --pattern_height 8 --pattern_distance 20 --pattern_radius_inside 5 --pattern_radius_outside 10 --pattern_margin_size 40 --pixel_size 0.2331 --image_folder ../data/stereo_camera_calibrate
