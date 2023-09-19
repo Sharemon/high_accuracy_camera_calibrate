@@ -173,24 +173,30 @@ void single_calibrate(const pattern_infos_t& pattern_infos, const string& image_
     std::cout << "D: " << std::endl;
     std::cout << D << std::endl;
 
-    for (int iter = 0; iter < 10; iter++)
+#if 1
+    // 4. 迭代标定3次
+    const int max_iterations = 3;
+    // 4.1. 左相机
+    for (int iter = 0; iter < max_iterations; iter++)
     {
-        // 4. 控制点迭代
+        // 控制点迭代
         for (int i = 0; i < images.size(); i++)
         {
             high_accuracy_corner_detector::refine_corners(images[i], corner_pts[i], pattern_infos, K, D);
         }
 
-        // 5. 第二次标定
+        // 第二次标定
+        flag = flag | cv::CALIB_USE_INTRINSIC_GUESS;
         rms = cv::calibrateCamera(object_pts, corner_pts, img_size, K, D, r, t, flag);
 
-        std::cout << iter+1 << "th calibration result: " << std::endl;
+        std::cout << iter + 1 << "th calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;
         std::cout << "K: " << std::endl;
         std::cout << K << std::endl;
         std::cout << "D: " << std::endl;
         std::cout << D << std::endl;
     }
+#endif
 }
 
 
@@ -214,7 +220,7 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
     for(auto image_path : image_paths)
     {
-        // 2.1. 将图片分解为左右两副
+        // 2.1. 将图片分解为左右两副图像
         cv::Mat image = cv::imread(image_path, cv::IMREAD_GRAYSCALE);
         cv::Mat left_image = image.colRange(0, image.cols/2).clone();
         cv::Mat right_image = image.colRange(image.cols/2, image.cols).clone();
@@ -261,10 +267,6 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
     std::cout << "1st left camera calibration result: " << std::endl;
     std::cout << "rms: " << rms << std::endl;
-    // std::cout << "K: " << std::endl;
-    // std::cout << Kl << std::endl;
-    // std::cout << "D: " << std::endl;
-    // std::cout << Dl << std::endl;
 
     // 3.1. 右相机
     cv::Mat Kr, Dr, rvecsr, tvecsr;
@@ -272,12 +274,8 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
     std::cout << "1st right camera calibration result: " << std::endl;
     std::cout << "rms: " << rms << std::endl;
-    // std::cout << "K: " << std::endl;
-    // std::cout << Kr << std::endl;
-    // std::cout << "D: " << std::endl;
-    // std::cout << Dr << std::endl;
 
-#if 0
+#if 1
     // 4. 迭代标定3次
     const int max_iterations = 3;
     // 4.1. 左相机
@@ -295,10 +293,6 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
         std::cout << iter+1 << "th left camera calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;
-        // std::cout << "K: " << std::endl;
-        // std::cout << Kl << std::endl;
-        // std::cout << "D: " << std::endl;
-        // std::cout << Dl << std::endl;
     }
 
     // 4.2. 右相机
@@ -316,10 +310,6 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
         std::cout << iter+1 << "th right camera calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;
-        // std::cout << "K: " << std::endl;
-        // std::cout << Kr << std::endl;
-        // std::cout << "D: " << std::endl;
-        // std::cout << Dr << std::endl;
     }
 
     // 5. 双目标定

@@ -149,8 +149,6 @@ void order_corners(const std::vector<cv::RotatedRect>& ellipses, std::vector<cv:
     center.x = rect_outlayer.x + rect_outlayer.width/2.0;
     center.y = rect_outlayer.y + rect_outlayer.height/2.0;
 #endif
-    std::cout << "center" << std::endl;
-    std::cout << center << std::endl;
 
     // 2. 计算四个角点
     std::vector<std::pair<int, double>> idxs_and_dists(4);
@@ -521,7 +519,6 @@ void high_accuracy_corner_detector::refine_corners(
                 roi.x + img_single_pattern.cols/2.0 + corners_max.x, 
                 roi.y + img_single_pattern.rows/2.0 + corners_max.y));
     }
-    // corners_frontal_refined = corners_und_frontal;
 
     // 8. 将正平面控制点转换回原图像中的坐标
     // 8.1 透视变换回来
@@ -547,13 +544,13 @@ void high_accuracy_corner_detector::refine_corners(
     std::vector<cv::Point2f> corners_refined;
     cv::projectPoints(corners_refined_without_distortion_3d, cv::Vec3f(0,0,0), cv::Vec3f(0,0,0), K, D, corners_refined);
 
-    // cv::Mat show = image.clone();
+    // cv::Mat show = img_pattern.clone();
     // cv::cvtColor(show, show, cv::COLOR_GRAY2RGB);
     // for (int i=0;i<corners.size();i++)
     // {
-    //     cv::circle(show, corners[i], 16, cv::Scalar(0, 255, 0), 4);
-    //     // cv::circle(show, corners_und_frontal[i], 16, cv::Scalar(0, 255, 0), 4);
-    //     //cv::circle(show, corners_frontal_refined[i], 16, cv::Scalar(255, 0, 0), 4);
+    //     // cv::circle(show, corners[i], 16, cv::Scalar(0, 255, 0), 4);
+    //     cv::circle(show, corners_und_frontal[i], 16, cv::Scalar(0, 255, 0), 4);
+    //     cv::circle(show, corners_frontal_refined[i], 16, cv::Scalar(255, 0, 0), 4);
     //     //std::cout << corners[i] << " -- " << corners_refined_without_distortion[i] << " -- " << corners_refined_without_distortion_3d[i] << " -- " << corners_refined[i] << std::endl;
     // }
 
