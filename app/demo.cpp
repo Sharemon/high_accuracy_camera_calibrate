@@ -26,7 +26,7 @@ void generate_board(const pattern_infos_t& pattern_infos, const string& image_fo
     cv::Mat calibration_board_image;
     high_accuracy_corner_detector::generate_calibration_board(pattern_infos, calibration_board_image);
 
-    (image_folder + "/board.png", calibration_board_image);
+    cv::imwrite(image_folder + "/board.png", calibration_board_image);
 }
 
 
@@ -73,15 +73,15 @@ void simulate_image(const pattern_infos_t& pattern_infos, const string& image_fo
 
     // 定义9张标定图片的位移和旋转
     std::vector<cv::Vec3d> tvecs = {
-        cv::Vec3d(0, 0, 0.7),
-        cv::Vec3d(0, 0, 0.7),
-        cv::Vec3d(0, 0, 0.7),
-        cv::Vec3d(0, 0, 0.7),
-        cv::Vec3d(0, 0, 0.7),
-        cv::Vec3d(-0.4, 0, 0.7),
-        cv::Vec3d( 0.4, 0, 0.7),
-        cv::Vec3d(0, -0.2, 0.7),
-        cv::Vec3d(0,  0.2, 0.7)
+        cv::Vec3d(0, 0, 0.5),
+        cv::Vec3d(0, 0, 0.5),
+        cv::Vec3d(0, 0, 0.5),
+        cv::Vec3d(0, 0, 0.5),
+        cv::Vec3d(0, 0, 0.5),
+        cv::Vec3d(-0.2, 0, 0.5),
+        cv::Vec3d( 0.2, 0, 0.5),
+        cv::Vec3d(0, -0.1, 0.5),
+        cv::Vec3d(0,  0.1, 0.5)
     };
 
     std::vector<cv::Vec3d> rvecs = {
@@ -175,7 +175,7 @@ void single_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
 #if 1
     // 4. 迭代标定3次
-    const int max_iterations = 3;
+    const int max_iterations = 10;
     // 4.1. 左相机
     for (int iter = 0; iter < max_iterations; iter++)
     {

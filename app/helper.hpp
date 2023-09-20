@@ -36,6 +36,7 @@ void parse_args(int argc, char *argv[], op_mode_t &mode, high_accuracy_corner_de
     int opt_indx = 0;
     static struct option long_options[] = {
         {"mode", required_argument, NULL, 'm'},
+        {"pattern_type", required_argument, NULL, 't'},
         {"pattern_width", required_argument, NULL, 'w'},
         {"pattern_height", required_argument, NULL, 'h'},
         {"pattern_distance", required_argument, NULL, 'd'},
@@ -66,6 +67,16 @@ void parse_args(int argc, char *argv[], op_mode_t &mode, high_accuracy_corner_de
             else
             {
                 mode = op_mode_t::simulate_calibration_image;
+            }
+            break;
+        case 't':
+            if (std::string(optarg) == "ring")
+            {
+                pattern_infos.type = high_accuracy_corner_detector::pattern_type_t::ring;
+            }
+            else
+            {
+                pattern_infos.type = high_accuracy_corner_detector::pattern_type_t::circle;
             }
             break;
         case 'w':

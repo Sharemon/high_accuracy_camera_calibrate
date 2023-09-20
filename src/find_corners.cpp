@@ -20,7 +20,7 @@ using namespace high_accuracy_corner_detector;
 /// @param p1 点1
 /// @param p2 点2
 /// @return 距离
-inline double calc_dist_between_points(cv::Point2f p1, cv::Point2f p2)
+static inline double calc_dist_between_points(cv::Point2f p1, cv::Point2f p2)
 {
     return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
@@ -29,7 +29,7 @@ inline double calc_dist_between_points(cv::Point2f p1, cv::Point2f p2)
 /// @param contour 轮廓点
 /// @param ellipse_rect 椭圆拟合得到的矩形框
 /// @return 相关性
-double calc_ellipse_fit_relation(const std::vector<cv::Point>& contour, const cv::RotatedRect& ellipse_rect)
+static double calc_ellipse_fit_relation(const std::vector<cv::Point>& contour, const cv::RotatedRect& ellipse_rect)
 {
     double a = ellipse_rect.size.width / 2;
     double b = ellipse_rect.size.height / 2;
@@ -59,7 +59,7 @@ double calc_ellipse_fit_relation(const std::vector<cv::Point>& contour, const cv
 /// @param contour 轮廓点
 /// @param ellipse_rect 椭圆拟合得到的矩形框
 /// @return 弧度范围
-double calc_ellipse_angle_range(const std::vector<cv::Point>& contour, const cv::RotatedRect& ellipse_rect)
+static double calc_ellipse_angle_range(const std::vector<cv::Point>& contour, const cv::RotatedRect& ellipse_rect)
 {
     cv::Point2f center = ellipse_rect.center;
 
@@ -89,7 +89,7 @@ double calc_ellipse_angle_range(const std::vector<cv::Point>& contour, const cv:
 /// @param ellipses 已有椭圆列表
 /// @param ellipse_compared 新的椭圆
 /// @return 最小距离
-double min_dist_from_existed_ellipses(const std::vector<cv::RotatedRect>& ellipses, const cv::RotatedRect& ellipse_compared)
+static double min_dist_from_existed_ellipses(const std::vector<cv::RotatedRect>& ellipses, const cv::RotatedRect& ellipse_compared)
 {
     double dist_min = DBL_MAX;
     for (auto ellipse: ellipses)
@@ -109,7 +109,7 @@ double min_dist_from_existed_ellipses(const std::vector<cv::RotatedRect>& ellips
 /// @param a 点a
 /// @param b 点b
 /// @return 是否交换a,b
-bool control_pts_frontal_compare_y(cv::Point2f a, cv::Point2f b)
+static bool control_pts_frontal_compare_y(cv::Point2f a, cv::Point2f b)
 {
     return (a.y < b.y);
 }
@@ -118,7 +118,7 @@ bool control_pts_frontal_compare_y(cv::Point2f a, cv::Point2f b)
 /// @param a 点a
 /// @param b 点b
 /// @return 是否交换a,b
-bool control_pts_frontal_compare_x(cv::Point2f a, cv::Point2f b)
+static bool control_pts_frontal_compare_x(cv::Point2f a, cv::Point2f b)
 {
     return (a.x < b.x);
 }
@@ -128,7 +128,7 @@ bool control_pts_frontal_compare_x(cv::Point2f a, cv::Point2f b)
 /// @param ellipses 椭圆拟合结果
 /// @param corners 排序后的角点
 /// @param pattern_size 标定图案尺寸
-void order_corners(const std::vector<cv::RotatedRect>& ellipses, std::vector<cv::Point2f>& corners, const cv::Size& pattern_size)
+static void order_corners(const std::vector<cv::RotatedRect>& ellipses, std::vector<cv::Point2f>& corners, const cv::Size& pattern_size)
 {
     // 1. 计算所有圆心的中点
     cv::Point2f center(0,0);
@@ -261,10 +261,6 @@ void high_accuracy_corner_detector::find_corners(const cv::Mat &image, std::vect
     // 1. 边缘检测
     cv::Mat edge;
     cv::Canny(image_gaussian, edge, 100, 150);
-    // // 做一个闭运算将断开的轮廓连起来
-    // cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(11, 11));
-	// cv::Mat result;
-	// cv::morphologyEx(image, image, cv::MORPH_CLOSE, element);
 
     // 2. 椭圆检测
     // 2.1. 轮廓检测
@@ -272,38 +268,73 @@ void high_accuracy_corner_detector::find_corners(const cv::Mat &image, std::vect
     cv::findContours(edge, contours, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
 
     // 2.2. 椭圆拟合 & 滤波
-    const double w_h_ratio_threshold = 0.7;          
-    const double w_h_max = image.size().width / 12.0;
-    const double w_h_min = image.size().width / 72.0;
-    const double r_min = 0.98;
-    const double angle_range_min = 0.75;
-    const double dist_min = 10;
+    const double w_h_ratio_threshold = 0.7;             // ratio of ellipse width and height
+    const double w_h_max = image.size().width / 12.0;   // ceil limit of ellipse width or heght
+    const double w_h_min = image.size().width / 96.0;   // floor limit of ellipse width or heght
+    const double r_min = 0.98;                          // floor limit of ellipse fitting coefficients
+    const double angle_range_min = 0.75;                // floor limit of ellipse arc angle range
+    const double dist_min = 10;                         // floor limit of distance between center of new found ellipse and existing ones 
     std::vector<cv::RotatedRect> ellipses;
-    for (int i = 0; i < contours.size(); i++)
+
+    if (pattern_infos.type == pattern_type_t::circle)
     {
-        if (contours[i].size() > 10)
+        // 找圆
+        for (int i = 0; i < contours.size(); i++)
         {
-            // 椭圆拟合
-            cv::RotatedRect ellipse_rect = cv::fitEllipse(contours[i]);
-
-            // 计算长宽比
-            double w_h_ratio = std::min(ellipse_rect.size.width, ellipse_rect.size.height) / std::max(ellipse_rect.size.width, ellipse_rect.size.height);
-
-            // 计算拟合度
-            double r = calc_ellipse_fit_relation(contours[i], ellipse_rect);
-
-            // 计算圆弧角度
-            double angle_range = calc_ellipse_angle_range(contours[i], ellipse_rect);
-
-            if (w_h_ratio > w_h_ratio_threshold &&
-                std::min(ellipse_rect.size.width, ellipse_rect.size.height) > w_h_min &&
-                std::max(ellipse_rect.size.width, ellipse_rect.size.height) < w_h_max &&
-                min_dist_from_existed_ellipses(ellipses, ellipse_rect) > dist_min &&
-                r > r_min &&
-                angle_range > angle_range_min)
+            if (contours[i].size() > 10)
             {
-                ellipses.push_back(ellipse_rect);
-                // std::cout << ellipse_rect.center << ":" << r << ", " << contours[i].size() << ", " << angle_range << std::endl;
+                // 椭圆拟合
+                cv::RotatedRect ellipse_rect = cv::fitEllipse(contours[i]);
+
+                // 计算长宽比
+                double w_h_ratio = std::min(ellipse_rect.size.width, ellipse_rect.size.height) / std::max(ellipse_rect.size.width, ellipse_rect.size.height);
+
+                // 计算拟合度
+                double r = calc_ellipse_fit_relation(contours[i], ellipse_rect);
+
+                // 计算圆弧角度
+                double angle_range = calc_ellipse_angle_range(contours[i], ellipse_rect);
+
+                if (w_h_ratio > w_h_ratio_threshold &&
+                    std::min(ellipse_rect.size.width, ellipse_rect.size.height) > w_h_min &&
+                    std::max(ellipse_rect.size.width, ellipse_rect.size.height) < w_h_max &&
+                    min_dist_from_existed_ellipses(ellipses, ellipse_rect) > dist_min &&
+                    r > r_min &&
+                    angle_range > angle_range_min)
+                {
+                    ellipses.push_back(ellipse_rect);
+                }
+            }
+        }
+    }
+    else if (pattern_infos.type == pattern_type_t::ring)
+    {
+        // 找圆环
+        for (int i = 0; i < contours.size(); i++)
+        {
+            if (contours[i].size() > 10)
+            {
+                // 椭圆拟合
+                cv::RotatedRect ellipse_rect = cv::fitEllipse(contours[i]);
+
+                // 计算长宽比
+                double w_h_ratio = std::min(ellipse_rect.size.width, ellipse_rect.size.height) / std::max(ellipse_rect.size.width, ellipse_rect.size.height);
+
+                // 计算拟合度
+                double r = calc_ellipse_fit_relation(contours[i], ellipse_rect);
+
+                // 计算圆弧角度
+                double angle_range = calc_ellipse_angle_range(contours[i], ellipse_rect);
+
+                if (w_h_ratio > w_h_ratio_threshold &&
+                    std::min(ellipse_rect.size.width, ellipse_rect.size.height) > w_h_min &&
+                    std::max(ellipse_rect.size.width, ellipse_rect.size.height) < w_h_max &&
+                    min_dist_from_existed_ellipses(ellipses, ellipse_rect) > dist_min &&
+                    r > r_min &&
+                    angle_range > angle_range_min)
+                {
+                    ellipses.push_back(ellipse_rect);
+                }
             }
         }
     }
@@ -327,7 +358,7 @@ void high_accuracy_corner_detector::find_corners(const cv::Mat &image, std::vect
     //         cv::line(show, corners[i], corners[i+1], cv::Scalar(255, 255, 0), 4);
     //     // cv::circle(show, ellipses[i], 16, cv::Scalar(0,255,0),4);
     // }
-    // cv::resize(show, show, image.size() / 4);
+    // cv::resize(show, show, image.size());
     // cv::imshow("show", show);
     // cv::waitKey(0);
 }
@@ -336,9 +367,8 @@ void high_accuracy_corner_detector::find_corners(const cv::Mat &image, std::vect
 /// @brief 找矩阵最大值，并进行亚像素优化，参考https://cloud.tencent.com/developer/article/2010095
 /// @param matrix 矩阵数据
 /// @return 最大值坐标
-cv::Point2f find_mat_max_subpixel(const cv::Mat& matrix)
+static cv::Point2f find_mat_max_subpixel(const cv::Mat& matrix)
 {
-#if 1
     // 先找最大值
     cv::Point max_loc;
     cv::minMaxLoc(matrix, NULL, NULL, NULL, &max_loc);
@@ -378,41 +408,6 @@ cv::Point2f find_mat_max_subpixel(const cv::Mat& matrix)
 
     Eigen::Vector2d r = K1.inverse() * K2;
     return cv::Point2f(r(0) + max_loc.x, r(1) + max_loc.y);
-    // return cv::Point2f(max_loc.x, max_loc.y);
-#else
-    // 拟合二维二次曲线
-    Eigen::MatrixXd A(matrix.rows*matrix.cols, 6);
-    Eigen::VectorXd b(matrix.rows*matrix.cols);
-
-    for (int y = 0; y < matrix.rows; y++)
-    {
-        for (int x = 0; x < matrix.cols; x++)
-        {
-            A(x + y*matrix.cols, 0) = x*x;
-            A(x + y*matrix.cols, 1) = y*y;
-            A(x + y*matrix.cols, 2) = x*y;
-            A(x + y*matrix.cols, 3) = x;
-            A(x + y*matrix.cols, 4) = y;
-            A(x + y*matrix.cols, 5) = 1;
-
-            b(x + y*matrix.cols) = matrix.at<float>(y,x);
-        }
-    }
-
-    // z中为二维二次曲线的系数
-    // f(x,y) = z(0) * x*x + z(1) *y*y + z(2) *x*y + z(3) *x + z(4) *y + z(5)
-    Eigen::VectorXd z = (A.transpose() * A).inverse() * A.transpose() * b;
-
-    // 对二次曲线求导
-    Eigen::Matrix2d K1;
-    Eigen::Vector2d K2;
-
-    K1 << 2*z(0), z(2), z(2), 2*z(1);
-    K2 << -z(3), -z(4);
-
-    Eigen::Vector2d r = K1.inverse() * K2;
-    return cv::Point2f(r(0), r(1));
-#endif
 }
 
 

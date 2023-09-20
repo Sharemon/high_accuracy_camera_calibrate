@@ -15,8 +15,7 @@ namespace high_accuracy_corner_detector
     /// @brief 标定图案样式
     enum pattern_type_t
     {
-        chessboard = 0,         // 棋盘格
-        circle,                 // 圆点
+        circle = 0,             // 圆点
         ring                    // 圆环
     };
 
