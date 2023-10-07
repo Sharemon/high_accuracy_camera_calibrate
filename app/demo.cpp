@@ -224,9 +224,6 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
         cv::Mat image = cv::imread(image_path, cv::IMREAD_GRAYSCALE);
         cv::Mat left_image = image.colRange(0, image.cols/2).clone();
         cv::Mat right_image = image.colRange(image.cols/2, image.cols).clone();
-
-        left_images.push_back(left_image);
-        right_images.push_back(right_image);
         
         img_size = left_image.size();
 
@@ -246,6 +243,9 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
             high_accuracy_corner_detector::generate_world_corners(pattern_infos, points_3d);
 
             object_pts.push_back(points_3d);
+
+            left_images.push_back(left_image);
+            right_images.push_back(right_image);
 
             valid_image_num ++;
         }
@@ -270,14 +270,14 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
 
     // 3.1. 右相机
     cv::Mat Kr, Dr, rvecsr, tvecsr;
-    rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kr, Dr, rvecsr, tvecsr, flag);
+    rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsr, tvecsr, flag);
 
     std::cout << "1st right camera calibration result: " << std::endl;
     std::cout << "rms: " << rms << std::endl;
 
 #if 1
     // 4. 迭代标定3次
-    const int max_iterations = 3;
+    const int max_iterations = 5;
     // 4.1. 左相机
     for (int iter = 0; iter < max_iterations; iter++)
     {
@@ -288,8 +288,7 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
         }
 
         // 第二次标定
-        flag = flag | cv::CALIB_USE_INTRINSIC_GUESS;
-        rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag);
+        rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
         std::cout << iter+1 << "th left camera calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;
@@ -305,8 +304,7 @@ void stereo_calibrate(const pattern_infos_t& pattern_infos, const string& image_
         }
 
         // 第二次标定
-        flag = flag | cv::CALIB_USE_INTRINSIC_GUESS;
-        rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsl, tvecsl, flag);
+        rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
         std::cout << iter+1 << "th right camera calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;

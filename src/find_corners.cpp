@@ -270,7 +270,7 @@ void high_accuracy_corner_detector::find_corners(const cv::Mat &image, std::vect
     // 2.2. 椭圆拟合 & 滤波
     const double w_h_ratio_threshold = 0.7;             // ratio of ellipse width and height
     const double w_h_max = image.size().width / 12.0;   // ceil limit of ellipse width or heght
-    const double w_h_min = image.size().width / 96.0;   // floor limit of ellipse width or heght
+    const double w_h_min = image.size().width / 72.0;   // floor limit of ellipse width or heght
     const double r_min = 0.98;                          // floor limit of ellipse fitting coefficients
     const double angle_range_min = 0.75;                // floor limit of ellipse arc angle range
     const double dist_min = 10;                         // floor limit of distance between center of new found ellipse and existing ones 
@@ -508,6 +508,7 @@ void high_accuracy_corner_detector::refine_corners(
     {
         cv::Point2f pt = corners_und_frontal[i];
         cv::Rect roi(pt.x - img_single_pattern.cols/2 - 25, pt.y - img_single_pattern.rows/2 - 25, 51, 51);
+
         cv::Point2f corners_max = find_mat_max_subpixel(result(roi));
         corners_frontal_refined.push_back(
             cv::Point2f(
