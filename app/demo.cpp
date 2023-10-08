@@ -126,7 +126,6 @@ void single_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     for (auto image_path : image_paths)
     {
         cv::Mat image = cv::imread(image_path, cv::IMREAD_GRAYSCALE);
-        images.push_back(image);
         img_size = image.size();
 
         std::vector<cv::Point2f> corners;
@@ -140,6 +139,8 @@ void single_calibrate(const pattern_infos_t &pattern_infos, const string &image_
             high_accuracy_corner_detector::generate_world_corners(pattern_infos, points_3d);
 
             object_pts.push_back(points_3d);
+
+            images.push_back(image);
 
             valid_image_num++;
         }
@@ -249,7 +250,7 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     }
 
     // 3. 第一次标定
-    int flag = cv::CALIB_USE_INTRINSIC_GUESS;//cv::CALIB_USE_INTRINSIC_GUESS | cv::CALIB_RATIONAL_MODEL;
+    int flag = 0;// cv::CALIB_RATIONAL_MODEL;
     double rms = 0;
     // 3.1. 左相机
     cv::Mat Kl, Dl, rvecsl, tvecsl;
@@ -260,10 +261,10 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     Kl.at<double>(0,2) = img_size.width / 2.0;
     Kl.at<double>(1,2) = img_size.height / 2.0;
     Kl.at<double>(2,2) = 1;
-    rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag);
+    rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
     std::cout << "================================================" << std::endl;
-    std::cout << "1st left camera calibration result: " << std::endl;
+    std::cout << "initial left camera calibration result: " << std::endl;
     std::cout << "rms: " << rms << std::endl;
     std::cout << "K: " << std::endl;
     std::cout << Kl << std::endl;
@@ -279,19 +280,19 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     Kr.at<double>(0,2) = img_size.width / 2.0;
     Kr.at<double>(1,2) = img_size.height / 2.0;
     Kr.at<double>(2,2) = 1;
-    rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsr, tvecsr, flag);
+    rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsr, tvecsr,  flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
     std::cout << "================================================" << std::endl;
-    std::cout << "1st right camera calibration result: " << std::endl;
+    std::cout << "initial right camera calibration result: " << std::endl;
     std::cout << "rms: " << rms << std::endl;
     std::cout << "K: " << std::endl;
     std::cout << Kr << std::endl;
     std::cout << "D: " << std::endl;
     std::cout << Dr << std::endl;
 
-#if 0
+#if 1
     // 4. 迭代标定3次
-    const int max_iterations = 10;
+    const int max_iterations = 5;
     // 4.1. 左相机
     for (int iter = 0; iter < max_iterations; iter++)
     {
@@ -305,7 +306,7 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
         rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
         std::cout << "================================================" << std::endl;
-        std::cout << iter + 1 << "th left camera calibration result: " << std::endl;
+        std::cout << iter << "th left camera calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;
         std::cout << "K: " << std::endl;
         std::cout << Kl << std::endl;
@@ -326,7 +327,7 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
         rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
         std::cout << "================================================" << std::endl;
-        std::cout << iter + 1 << "th right camera calibration result: " << std::endl;
+        std::cout << iter << "th right camera calibration result: " << std::endl;
         std::cout << "rms: " << rms << std::endl;
         std::cout << "K: " << std::endl;
         std::cout << Kr << std::endl;
