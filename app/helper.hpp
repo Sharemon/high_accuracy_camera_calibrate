@@ -255,13 +255,13 @@ void evaluate_stereo_calib_result(
             {
                 if (k != pattern_infos.size.width - 1)
                 {
-                    double dist = abs(calc_dist_between_3d_points(pts3d[k + j * pattern_infos.size.width], pts3d[k + 1 + j * pattern_infos.size.width]) - 32);
+                    double dist = abs(calc_dist_between_3d_points(pts3d[k + j * pattern_infos.size.width], pts3d[k + 1 + j * pattern_infos.size.width]) - pattern_infos.distance);
                     dists_between_pts.push_back(dist);
                 }
 
                 if (j != pattern_infos.size.height - 1)
                 {
-                    double dist = abs(calc_dist_between_3d_points(pts3d[k + j * pattern_infos.size.width], pts3d[k + (j + 1) * pattern_infos.size.width]) - 32);
+                    double dist = abs(calc_dist_between_3d_points(pts3d[k + j * pattern_infos.size.width], pts3d[k + (j + 1) * pattern_infos.size.width]) - pattern_infos.distance);
                     dists_between_pts.push_back(dist);
                 }
             }
