@@ -219,11 +219,6 @@ void evaluate_stereo_calib_result(
     P2_3x3.copyTo(P2(cv::Rect(0, 0, 3, 3)));
     P2_3x1.copyTo(P2(cv::Rect(3, 0, 1, 3)));
 
-    std::cout << "P1:" << std::endl;
-    std::cout << P1 << std::endl;
-    std::cout << "P2:" << std::endl;
-    std::cout << P2 << std::endl;
-
     // 计算标定板三维坐标
     std::vector<double> dists_between_pts;
     std::vector<double> dists_fitting_plane;
@@ -272,15 +267,11 @@ void evaluate_stereo_calib_result(
         fit_plane_LS(pts3d, plane_param);
 
         // 计算每个点的偏差
-        std::ofstream of("./calib_points_" + std::to_string(i) + ".txt", std::ios_base::out);
         for (int j = 0; j < pts3d.size(); j++)
         {
             double dist = plane_param[0] * pts3d[j].x + plane_param[1] * pts3d[j].y + plane_param[2] * pts3d[j].z + plane_param[3];
             dists_fitting_plane.push_back(abs(dist));
-
-            of << pts3d[j].x << "," << pts3d[j].y << "," << pts3d[j].z << "," << dist << std::endl;
         }
-        of.close();
     }
 
     // 计算距离均值和标准差

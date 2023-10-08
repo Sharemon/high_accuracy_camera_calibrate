@@ -392,6 +392,17 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     std::cout << "T: " << std::endl;
     std::cout << T << std::endl;
 
+    // 存储标定得到的结果
+    cv::FileStorage param_savefile("./stereo_params.yaml", cv::FileStorage::WRITE);
+
+    param_savefile << "rms" << rms;
+    param_savefile << "Kl" << Kl;
+    param_savefile << "Dl" << Dl;
+    param_savefile << "Kr" << Kr;
+    param_savefile << "Dr" << Dr;
+    param_savefile << "R" << R;
+    param_savefile << "T" << T;
+
     // 6. 反算标定板三维坐标
     evaluate_stereo_calib_result(Kl, Dl, Kr, Dr, R, T, left_corner_pts, right_corner_pts, pattern_infos, img_size);
 
