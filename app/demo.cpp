@@ -204,10 +204,16 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     std::vector<cv::Mat> left_images;
     std::vector<cv::Mat> right_images;
     std::vector<std::vector<cv::Point3f>> object_pts;
+    std::vector<std::vector<cv::Point3f>> object_pts_for_left_opt;
+    std::vector<std::vector<cv::Point3f>> object_pts_for_right_opt;
     std::vector<std::vector<cv::Point2f>> left_corner_pts;
+    std::vector<std::vector<cv::Point2f>> left_corner_pts_for_opt;
     std::vector<std::vector<cv::Point2f>> right_corner_pts;
+    std::vector<std::vector<cv::Point2f>> right_corner_pts_for_opt;
     cv::Size img_size;
     int valid_image_num = 0;
+    int left_valid_image_num = 0;
+    int right_valid_image_num = 0;
 
     for (auto image_path : image_paths)
     {
@@ -235,15 +241,41 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
 
             object_pts.push_back(points_3d);
 
-            left_images.push_back(left_image);
-            right_images.push_back(right_image);
-
             valid_image_num++;
+        }
+        
+        if (left_corners.size() == pattern_infos.size.width * pattern_infos.size.height)
+        {
+            left_corner_pts_for_opt.push_back(left_corners);
+
+            std::vector<cv::Point3f> points_3d;
+            high_accuracy_corner_detector::generate_world_corners(pattern_infos, points_3d);
+
+            object_pts_for_left_opt.push_back(points_3d);
+
+            left_images.push_back(left_image);
+            left_valid_image_num ++;
+        }
+        
+        if (right_corners.size() == pattern_infos.size.width * pattern_infos.size.height)
+        {
+            right_corner_pts_for_opt.push_back(right_corners);
+
+            std::vector<cv::Point3f> points_3d;
+            high_accuracy_corner_detector::generate_world_corners(pattern_infos, points_3d);
+
+            object_pts_for_right_opt.push_back(points_3d);
+
+            right_images.push_back(right_image);
+            right_valid_image_num ++;
         }
     }
 
+    printf("left get %d/%d valid images with corners.\n", left_valid_image_num, (int)image_paths.size());
+    printf("right get %d/%d valid images with corners.\n", right_valid_image_num, (int)image_paths.size());
     printf("get %d/%d valid images with corners.\n", valid_image_num, (int)image_paths.size());
-    if (valid_image_num < CALIB_IMAGE_NUM_MIN)
+
+    if (valid_image_num < CALIB_IMAGE_NUM_MIN || left_valid_image_num < CALIB_IMAGE_NUM_MIN || right_valid_image_num < CALIB_IMAGE_NUM_MIN)
     {
         printf("there is no enough valid images\n");
         return;
@@ -261,7 +293,7 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     Kl.at<double>(0,2) = img_size.width / 2.0;
     Kl.at<double>(1,2) = img_size.height / 2.0;
     Kl.at<double>(2,2) = 1;
-    rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
+    rms = cv::calibrateCamera(object_pts_for_left_opt, left_corner_pts_for_opt, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
     std::cout << "================================================" << std::endl;
     std::cout << "initial left camera calibration result: " << std::endl;
@@ -280,7 +312,7 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     Kr.at<double>(0,2) = img_size.width / 2.0;
     Kr.at<double>(1,2) = img_size.height / 2.0;
     Kr.at<double>(2,2) = 1;
-    rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsr, tvecsr,  flag | cv::CALIB_USE_INTRINSIC_GUESS);
+    rms = cv::calibrateCamera(object_pts_for_right_opt, right_corner_pts_for_opt, img_size, Kr, Dr, rvecsr, tvecsr,  flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
     std::cout << "================================================" << std::endl;
     std::cout << "initial right camera calibration result: " << std::endl;
@@ -299,11 +331,11 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
         // 控制点迭代
         for (int i = 0; i < left_images.size(); i++)
         {
-            high_accuracy_corner_detector::refine_corners(left_images[i], left_corner_pts[i], pattern_infos, Kl, Dl);
+            high_accuracy_corner_detector::refine_corners(left_images[i], left_corner_pts_for_opt[i], pattern_infos, Kl, Dl);
         }
 
         // 第二次标定
-        rms = cv::calibrateCamera(object_pts, left_corner_pts, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
+        rms = cv::calibrateCamera(object_pts_for_left_opt, left_corner_pts_for_opt, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
         std::cout << "================================================" << std::endl;
         std::cout << iter << "th left camera calibration result: " << std::endl;
@@ -320,11 +352,11 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
         // 控制点迭代
         for (int i = 0; i < right_images.size(); i++)
         {
-            high_accuracy_corner_detector::refine_corners(right_images[i], right_corner_pts[i], pattern_infos, Kr, Dr);
+            high_accuracy_corner_detector::refine_corners(right_images[i], right_corner_pts_for_opt[i], pattern_infos, Kr, Dr);
         }
 
         // 第二次标定
-        rms = cv::calibrateCamera(object_pts, right_corner_pts, img_size, Kr, Dr, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
+        rms = cv::calibrateCamera(object_pts_for_right_opt, right_corner_pts_for_opt, img_size, Kr, Dr, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 
         std::cout << "================================================" << std::endl;
         std::cout << iter << "th right camera calibration result: " << std::endl;
