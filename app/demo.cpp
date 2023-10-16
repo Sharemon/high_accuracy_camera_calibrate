@@ -282,18 +282,19 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     }
 
     // 3. 第一次标定
-    int flag = 0;// cv::CALIB_RATIONAL_MODEL;
+    int flag = cv::CALIB_RATIONAL_MODEL;
     double rms = 0;
     // 3.1. 左相机
     cv::Mat Kl, Dl, rvecsl, tvecsl;
-    Kl = cv::Mat::zeros(3,3, CV_64FC1);
-    Dl = cv::Mat::zeros(1,8, CV_64FC1);
-    Kl.at<double>(0,0) = 1200;
-    Kl.at<double>(1,1) = 1200;
-    Kl.at<double>(0,2) = img_size.width / 2.0;
-    Kl.at<double>(1,2) = img_size.height / 2.0;
-    Kl.at<double>(2,2) = 1;
-    rms = cv::calibrateCamera(object_pts_for_left_opt, left_corner_pts_for_opt, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
+    // Kl = cv::Mat::zeros(3,3, CV_64FC1);
+    // Dl = cv::Mat::zeros(1,8, CV_64FC1);
+    // Kl.at<double>(0,0) = 1000;
+    // Kl.at<double>(1,1) = 1000;
+    // Kl.at<double>(0,2) = img_size.width / 2.0;
+    // Kl.at<double>(1,2) = img_size.height / 2.0;
+    // Kl.at<double>(2,2) = 1;
+    // rms = cv::calibrateCamera(object_pts_for_left_opt, left_corner_pts_for_opt, img_size, Kl, Dl, rvecsl, tvecsl, flag | cv::CALIB_USE_INTRINSIC_GUESS);
+    rms = cv::calibrateCamera(object_pts_for_left_opt, left_corner_pts_for_opt, img_size, Kl, Dl, rvecsl, tvecsl, flag);
 
     std::cout << "================================================" << std::endl;
     std::cout << "initial left camera calibration result: " << std::endl;
@@ -307,12 +308,13 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
     cv::Mat Kr, Dr, rvecsr, tvecsr;
     Kr = cv::Mat::zeros(3, 3, CV_64FC1);
     Dr = cv::Mat::zeros(1,8, CV_64FC1);
-    Kr.at<double>(0,0) = 1200;
-    Kr.at<double>(1,1) = 1200;
-    Kr.at<double>(0,2) = img_size.width / 2.0;
-    Kr.at<double>(1,2) = img_size.height / 2.0;
-    Kr.at<double>(2,2) = 1;
-    rms = cv::calibrateCamera(object_pts_for_right_opt, right_corner_pts_for_opt, img_size, Kr, Dr, rvecsr, tvecsr,  flag | cv::CALIB_USE_INTRINSIC_GUESS);
+    // Kr.at<double>(0,0) = 1000;
+    // Kr.at<double>(1,1) = 1000;
+    // Kr.at<double>(0,2) = img_size.width / 2.0;
+    // Kr.at<double>(1,2) = img_size.height / 2.0;
+    // Kr.at<double>(2,2) = 1;
+    // rms = cv::calibrateCamera(object_pts_for_right_opt, right_corner_pts_for_opt, img_size, Kr, Dr, rvecsr, tvecsr,  flag | cv::CALIB_USE_INTRINSIC_GUESS);
+    rms = cv::calibrateCamera(object_pts_for_right_opt, right_corner_pts_for_opt, img_size, Kr, Dr, rvecsr, tvecsr,  flag);
 
     std::cout << "================================================" << std::endl;
     std::cout << "initial right camera calibration result: " << std::endl;
@@ -324,7 +326,7 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
 
 #if 1
     // 4. 迭代标定3次
-    const int max_iterations = 5;
+    const int max_iterations = 10;
     // 4.1. 左相机
     for (int iter = 0; iter < max_iterations; iter++)
     {
@@ -369,7 +371,8 @@ void stereo_calibrate(const pattern_infos_t &pattern_infos, const string &image_
 
     // 5. 双目标定
     cv::Mat R, T, E, F;
-    rms = cv::stereoCalibrate(object_pts, left_corner_pts, right_corner_pts, Kl, Dl, Kr, Dr, img_size, R, T, E, F, flag | cv::CALIB_FIX_INTRINSIC);
+    // rms = cv::stereoCalibrate(object_pts, left_corner_pts, right_corner_pts, Kl, Dl, Kr, Dr, img_size, R, T, E, F, flag | cv::CALIB_FIX_INTRINSIC);
+    rms = cv::stereoCalibrate(object_pts, left_corner_pts, right_corner_pts, Kl, Dl, Kr, Dr, img_size, R, T, E, F, flag | cv::CALIB_USE_INTRINSIC_GUESS);
 #else
     // 5. 双目标定
     cv::Mat R, T, E, F;
