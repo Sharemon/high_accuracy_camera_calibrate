@@ -356,4 +356,31 @@ void evaluate_stereo_match(
     disp_s16.convertTo(disp, CV_8UC1, 1.0/16);
 }
 
+double calc_calibration_rmse(
+    const std::vector<std::vector<cv::Point3f>> &obj_pts,
+    const std::vector<std::vector<cv::Point2f>> &img_pts,
+    const cv::Mat &K, const cv::Mat &D,
+    const cv::Mat &rvecs, const cv::Mat &tvecs)
+{
+    for (int i = 0; i < obj_pts.size(); i++)
+    {
+        std::vector<cv::Point2f> img_pts_projected;
+        cv::projectPoints(obj_pts[i], rvecs.row(i), tvecs.row(i), K, D, img_pts_projected);
+
+        double rmse = 0;
+        int pts_num = 0;
+
+        for (int j = 0; j < img_pts_projected.size(); j++)
+        {
+            rmse += pow(img_pts[i][j].x - img_pts_projected[j].x, 2) + pow(img_pts[i][j].y - img_pts_projected[j].y, 2);
+            pts_num++;
+        }
+
+        rmse = sqrt(rmse / pts_num);
+        std::cout << "rmse: " << rmse << std::endl;
+    }
+
+    return 0;
+}
+
 #endif // __HELPER_H__
