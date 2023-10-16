@@ -369,29 +369,31 @@ void high_accuracy_corner_detector::find_corners(const cv::Mat &image, std::vect
 /// @return 最大值坐标
 static cv::Point2f find_mat_max_subpixel(const cv::Mat& matrix)
 {
+    const int N = 15;
+
     // 先找最大值
     cv::Point max_loc;
     cv::minMaxLoc(matrix, NULL, NULL, NULL, &max_loc);
 
     // 在最大值附近拟合二维二次曲线
-    Eigen::MatrixXd A(9, 6);
-    Eigen::VectorXd b(9);
+    Eigen::MatrixXd A(N*N, 6);
+    Eigen::VectorXd b(N*N);
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < N; i++)
     {
-        for (int j = 0; j < 3; j++)
+        for (int j = 0; j < N; j++)
         {
-            int x = j - 1;
-            int y = i - 1;
+            int x = j - N/2;
+            int y = i - N/2;
 
-            A(j + 3 * i, 0) = x*x;
-            A(j + 3 * i, 1) = y*y;
-            A(j + 3 * i, 2) = x*y;
-            A(j + 3 * i, 3) = x;
-            A(j + 3 * i, 4) = y;
-            A(j + 3 * i, 5) = 1;
+            A(j + N * i, 0) = x*x;
+            A(j + N * i, 1) = y*y;
+            A(j + N * i, 2) = x*y;
+            A(j + N * i, 3) = x;
+            A(j + N * i, 4) = y;
+            A(j + N * i, 5) = 1;
 
-            b(j + 3 * i) = matrix.at<float>(y + max_loc.y,x + max_loc.x);
+            b(j + N * i) = matrix.at<float>(y + max_loc.y,x + max_loc.x);
         }
     }
 
